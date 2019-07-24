@@ -3878,6 +3878,9 @@ static int get_rp_based_dcp_current(struct smb_charger *chg, int typec_mode)
 	int rp_ua;
 
 	switch (typec_mode) {
+	case POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER:
+		rp_ua = AUDIO_ADAPTER_CURRENT_UA;
+		break;
 	case POWER_SUPPLY_TYPEC_SOURCE_HIGH:
 		rp_ua = TYPEC_HIGH_CURRENT_UA;
 		break;
@@ -4519,6 +4522,8 @@ int smblib_get_charge_current(struct smb_charger *chg,
 		}
 
 		*total_current_ua = max(current_ua, val.intval);
+		if (chg->typec_mode == POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER)
+			*total_current_ua = AUDIO_ADAPTER_CURRENT_UA;
 		smblib_dbg(chg, PR_MISC, "typec_mode=%d total_current_ua=%d\n",
 			chg->typec_mode, *total_current_ua);
 		return 0;
@@ -4554,6 +4559,8 @@ int smblib_get_charge_current(struct smb_charger *chg,
 	}
 
 	*total_current_ua = max(current_ua, val.intval);
+	if (chg->typec_mode == POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER)
+		*total_current_ua = AUDIO_ADAPTER_CURRENT_UA;
 	smblib_dbg(chg, PR_MISC, "typec_source_rd=%d typec_mode=%d total_current_ua=%d\n",
 		typec_source_rd, chg->typec_mode, *total_current_ua);
 	return 0;
