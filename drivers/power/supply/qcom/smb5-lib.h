@@ -742,6 +742,7 @@ int smblib_set_prop_pd_active(struct smb_charger *chg,
 				const union power_supply_propval *val);
 int smblib_set_prop_pd_in_hard_reset(struct smb_charger *chg,
 				const union power_supply_propval *val);
+int smblib_get_prop_ship_mode(struct smb_charger *chg);
 int smblib_set_prop_ship_mode(struct smb_charger *chg,
 				const union power_supply_propval *val);
 int smblib_set_prop_rechg_soc_thresh(struct smb_charger *chg,

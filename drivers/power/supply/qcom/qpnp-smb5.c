@@ -1608,7 +1608,7 @@ static int smb5_batt_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_SET_SHIP_MODE:
 		/* Not in ship mode as long as device is active */
-		val->intval = 0;
+		val->intval = smblib_get_prop_ship_mode(chg);
 		break;
 	case POWER_SUPPLY_PROP_DIE_HEALTH:
 		if (chg->die_health == -EINVAL)
@@ -1711,7 +1711,7 @@ static int smb5_batt_set_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_SET_SHIP_MODE:
 		/* Not in ship mode as long as the device is active */
-		if (!val->intval)
+		if (val->intval)
 			break;
 		if (chg->pl.psy)
 			power_supply_set_property(chg->pl.psy,
@@ -1768,6 +1768,7 @@ static int smb5_batt_prop_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_INPUT_CURRENT_LIMITED:
 	case POWER_SUPPLY_PROP_STEP_CHARGING_ENABLED:
 	case POWER_SUPPLY_PROP_DIE_HEALTH:
+	case POWER_SUPPLY_PROP_SET_SHIP_MODE:
 		return 1;
 	default:
 		break;
