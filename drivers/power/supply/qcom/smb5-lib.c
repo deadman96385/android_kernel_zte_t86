@@ -4506,6 +4506,8 @@ int smblib_get_charge_current(struct smb_charger *chg,
 		}
 
 		*total_current_ua = max(current_ua, val.intval);
+		smblib_dbg(chg, PR_MISC, "typec_mode=%d total_current_ua=%d\n",
+			chg->typec_mode, *total_current_ua);
 		return 0;
 	}
 
@@ -4539,6 +4541,8 @@ int smblib_get_charge_current(struct smb_charger *chg,
 	}
 
 	*total_current_ua = max(current_ua, val.intval);
+	smblib_dbg(chg, PR_MISC, "typec_source_rd=%d typec_mode=%d total_current_ua=%d\n",
+		typec_source_rd, chg->typec_mode, *total_current_ua);
 	return 0;
 }
 
@@ -5200,7 +5204,7 @@ static void update_sw_icl_max(struct smb_charger *chg, int pst)
 		 * if this is a SDP and appropriately set the current
 		 */
 		vote(chg->usb_icl_votable, SW_ICL_MAX_VOTER, true,
-					SDP_100_MA);
+					SDP_CURRENT_UA);
 		break;
 	case POWER_SUPPLY_TYPE_UNKNOWN:
 	default:
