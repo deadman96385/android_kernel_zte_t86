@@ -1,0 +1,101 @@
+/*for fingerprint config*/
+&tlmm {
+	fp_shutdown_active:active{
+		mux{
+			pins = "gpio93";
+			function = "gpio";
+		};
+		config{
+			pins = "gpio93";
+			drive-strength = <6>;
+			output-high;
+			bias-disable = <0>;
+		};
+	};
+
+	fp_shutdown_suspend:suspend{
+		mux{
+			pins = "gpio93";
+			function = "gpio";
+		};
+		config{
+			pins = "gpio93";
+			drive-strength = <2>;
+			output-low;
+			bias-disable = <0>;
+		};
+	};
+
+	goodix_irq_active: goodix_irq_active{
+		mux{
+			pins = "gpio92";
+			function = "gpio";
+		};
+		config{
+			pins = "gpio92";
+			drive-strength = <2>;
+			bias-disable; /* No PULL */
+		};
+	};
+	goodix_pwr_active: goodix_pwr_active {
+		mux{
+			pins = "gpio116";
+			function = "gpio";
+		};
+		config {
+			pins = "gpio116";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+	goodix_fp_id_active: goodix_fp_id_active {
+		mux{
+			pins = "gpio117";
+			function = "gpio";
+		};
+		config {
+			pins = "gpio117";
+			drive-strength = <2>;
+			bias-disable;
+			input-enable;
+		};
+	};
+	goodix_fp_id_sleep: goodix_fp_id_sleep {
+		mux{
+			pins = "gpio117";
+			function = "gpio";
+		};
+		config {
+			pins = "gpio117";
+			drive-strength = <2>;
+			bias-disable;
+			input-enable;
+		};
+	};
+};
+
+&soc {
+	goodix_fp {
+		status = "ok";
+		reg = <0>;
+		compatible = "goodix,fingerprint";
+		interrupt-parent = <&tlmm>;
+		interrupts = <92 0x0>;
+
+		pinctrl-names = "default", "sleep", "goodix_active", "goodix_suspend", "goodix_irq", "pwr_active";
+		pinctrl-0 = <&goodix_fp_id_active>;
+		pinctrl-1 = <&goodix_fp_id_sleep>;
+		pinctrl-2 = <&fp_shutdown_active>;
+		pinctrl-3 = <&fp_shutdown_suspend>;
+		pinctrl-4 = <&goodix_irq_active>;
+		pinctrl-5 = <&goodix_pwr_active>;
+
+		fp-gpio-reset = <&tlmm 93 0>;
+		fp-gpio-irq = <&tlmm 92 0>;
+		fp-gpio-pwr = <&tlmm 116 0>;
+		interrupt-names = "goodix_wake_up";
+	};
+};
+
+

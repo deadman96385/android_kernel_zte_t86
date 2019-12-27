@@ -1,0 +1,116 @@
+/*
+ * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "dsi-panel-zte-lead-hx83112-jdi-singlemipi-fhd-video.dtsi"
+#include "dsi-panel-zte-skyworth-ft8719-jdi-singlemipi-fhd-video.dtsi"
+&soc {
+	dsi_panel_pwr_supply_novddio: dsi_panel_pwr_supply_novddio {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	qcom,panel-supply-entry@0 {
+		reg = <1>;
+		qcom,supply-name = "lab";
+		qcom,supply-min-voltage = <4600000>;
+		qcom,supply-max-voltage = <6000000>;
+		qcom,supply-enable-load = <100000>;
+		qcom,supply-disable-load = <100>;
+	};
+
+	qcom,panel-supply-entry@1 {
+		reg = <2>;
+		qcom,supply-name = "ibb";
+		qcom,supply-min-voltage = <4600000>;
+		qcom,supply-max-voltage = <6000000>;
+		qcom,supply-enable-load = <100000>;
+		qcom,supply-disable-load = <100>;
+		qcom,supply-post-on-sleep = <20>;
+	};
+	};
+
+	dsi_lead_hx83112_jdi_1080p_video_zte_display: qcom,dsi-display@5 {
+			label = "dsi_lead_hx83112_jdi_1080p_video_zte_display";
+			qcom,display-type = "primary";
+			qcom,dsi-ctrl-num = <0>;
+			qcom,dsi-phy-num = <0>;
+			qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
+			qcom,dsi-panel = <&dsi_hx83112_lead_jdi_video>;
+	};
+
+	dsi_skyworth_ft8719_jdi_1080p_video_zte_display: qcom,dsi-display@6 {
+			label = "dsi_skyworth_ft8719_jdi_1080p_video_zte_display";
+			qcom,display-type = "primary";
+			qcom,dsi-ctrl-num = <0>;
+			qcom,dsi-phy-num = <0>;
+			qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
+			qcom,dsi-panel = <&dsi_ft8719_skyworth_jdi_video>;
+	};
+};
+
+&dsi_hx83112_lead_jdi_video {
+		qcom,panel-supply-entries = <&dsi_panel_pwr_supply_novddio>;
+		zte,lcm_reset_pin_keep_high_sleeping;
+		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
+		qcom,mdss-dsi-bl-min-level = <48>;
+		qcom,mdss-dsi-bl-max-level = <4095>;
+		qcom,platform-reset-gpio = <&tlmm 90 0>;
+		qcom,mdss-dsi-t-clk-post = <0x0e>;
+		qcom,mdss-dsi-t-clk-pre = <0x34>;
+		qcom,mdss-dsi-display-timings {
+				timing@0{
+						qcom,mdss-dsi-panel-phy-timings =
+								[25 1F 09 0A 06 02 04 a0
+								25 1F 09 0A 06 02 04 a0
+								25 1F 09 0A 06 02 04 a0
+								25 1F 09 0A 06 02 04 a0
+								25 1E 08 0A 06 02 04 a0];
+						qcom,display-topology = <1 0 1>;
+						qcom,default-topology-index = <0>;
+				};
+		};
+};
+&dsi_ft8719_skyworth_jdi_video {
+		qcom,panel-supply-entries = <&dsi_panel_pwr_supply_novddio>;
+		zte,lcm_reset_pin_keep_high_sleeping;
+		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
+		qcom,mdss-dsi-bl-min-level = <3>;
+		qcom,mdss-dsi-bl-max-level = <255>;
+		qcom,platform-reset-gpio = <&tlmm 90 0>;
+		qcom,mdss-dsi-t-clk-post = <0x0e>;
+		qcom,mdss-dsi-t-clk-pre = <0x34>;
+		qcom,mdss-dsi-display-timings {
+				timing@0{
+						qcom,mdss-dsi-panel-phy-timings =
+								[25 1F 09 0A 06 02 04 a0
+								25 1F 09 0A 06 02 04 a0
+								25 1F 09 0A 06 02 04 a0
+								25 1F 09 0A 06 02 04 a0
+								25 1E 08 0A 06 02 04 a0];
+						qcom,display-topology = <1 0 1>;
+						qcom,default-topology-index = <0>;
+				};
+		};
+
+};
+
+
+&sde_dsi {
+	qcom,dsi-display-list =
+		<&dsi_td4330_truly_vid_display
+		&dsi_td4330_truly_cmd_display
+		&dsi_sim_vid_display
+		&dsi_hx83112a_truly_vid_display
+		&dsi_nt36672_truly_vid_display
+		&dsi_lead_hx83112_jdi_1080p_video_zte_display
+		&dsi_skyworth_ft8719_jdi_1080p_video_zte_display>;
+};

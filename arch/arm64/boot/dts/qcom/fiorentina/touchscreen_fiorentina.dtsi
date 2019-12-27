@@ -1,0 +1,129 @@
+
+
+/*for touchscreen config*/
+&tlmm {
+	gpio-controller;
+	#gpio-cells = <2>;
+
+	pmx_ts_int_init {
+		ts_int_init: ts_int_init {
+			mux {
+				pins = "gpio88";
+				function = "gpio";
+				};
+			config {
+				pins = "gpio88";
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+	};
+
+	pmx_ts_reset_init {
+		ts_reset_init: ts_reset_init {
+			mux {
+				pins = "gpio87";
+				function = "gpio";
+			};
+				config {
+				pins = "gpio87";
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+	};
+
+	pmx_ts_lcdid0_init {
+		ts_lcdid0_init: ts_lcdid0_init {
+			mux {
+				pins = "gpio20";
+				function = "gpio";
+				};
+			config {
+				pins = "gpio20";
+				drive-strength = <2>;
+				bias-pull-down;
+				input-enable;
+			};
+		};
+	};
+
+	pmx_ts_lcdid1_init {
+		ts_lcdid1_init: ts_lcdid1_init {
+			mux {
+				pins = "gpio21";
+				function = "gpio";
+			};
+				config {
+				pins = "gpio21";
+				drive-strength = <2>;
+				bias-pull-down;
+				input-enable;
+			};
+		};
+	};
+
+	/delete-node/ qupv3_se2_i2c_pins;
+	/* SE 2 pin mappings */
+		qupv3_se2_i2c_pins: qupv3_se2_i2c_pins {
+			qupv3_se2_i2c_active: qupv3_se2_i2c_active {
+				mux {
+					pins = "gpio6", "gpio7";
+					function = "qup02";
+				};
+
+				config {
+					pins = "gpio6", "gpio7";
+					drive-strength = <2>;
+					bias-disable;
+				};
+			};
+			qupv3_se2_i2c_sleep: qupv3_se2_i2c_sleep {
+				mux {
+					pins = "gpio6", "gpio7";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio6", "gpio7";
+					drive-strength = <2>;
+					bias-disable;
+					input-enable;
+				};
+			};
+		};
+};
+
+&qupv3_se2_i2c { /* BLSP1 QUP3 */
+	status = "okay";
+	/delete-node/ synaptics_tcm@20;
+	himax-ts@48 {
+		compatible = "himax,hxcommon";
+		reg = <0x48>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <88 0x2>;
+		pinctrl-names = "pmx_ts_init";
+		pinctrl-0 = <&ts_int_init &ts_reset_init &ts_lcdid0_init &ts_lcdid1_init>;
+		himax,panel-coords = <0 1080 0 2160>;
+		himax,display-coords = <0 1080 0 2160>;
+		himax,irq-gpio = <&tlmm 88 0x00>;
+		himax,rst-gpio = <&tlmm 87 0x00>;
+		himax,id0-gpio = <&tlmm 20 0x00>;
+		himax,id1-gpio = <&tlmm 21 0x00>;
+		report_type = <1>;
+	};
+
+	focaltech@38 {
+		compatible = "focaltech,fts";
+		reg = <0x38>;
+		interrupt-parent = <&tlmm>;
+		pinctrl-names = "pmx_ts_active", "pmx_ts_suspend";
+		pinctrl-0 = <&ts_int_init &ts_reset_init &ts_lcdid0_init &ts_lcdid1_init>;
+		pinctrl-1 = <&ts_int_init &ts_reset_init &ts_lcdid0_init &ts_lcdid1_init>;
+		focaltech,reset-gpio = <&tlmm 87 0x00>;
+		focaltech,irq-gpio = <&tlmm 88 0x00>;
+		focaltech,display-coords = <0 0 1079 2159>;
+		focaltech,max-touch-number = <10>;
+	};
+
+};
