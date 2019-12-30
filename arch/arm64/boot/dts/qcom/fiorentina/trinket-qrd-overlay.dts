@@ -14,10 +14,200 @@
 /plugin/;
 
 #include <dt-bindings/clock/qcom,gcc-trinket.h>
-
+#include "trinket-zte-display.dtsi"
 / {
 	model = "QRD";
 	compatible = "qcom,trinket-qrd", "qcom,trinket", "qcom,qrd";
 	qcom,msm-id = <394 0x0>;
 	qcom,board-id = <11 0>;
 };
+
+&soc {
+	cdc_sec_mi2s_gpios: msm_cdc_pinctrl_sec {
+		compatible = "qcom,msm-cdc-pinctrl";
+		pinctrl-names = "aud_active", "aud_sleep";
+		pinctrl-0 = <&sec_mi2s_sck_active &sec_mi2s_ws_active
+					&sec_mi2s_data0_active &sec_mi2s_data1_active>;
+		pinctrl-1 = <&sec_mi2s_sck_sleep &sec_mi2s_ws_sleep
+					&sec_mi2s_data0_sleep &sec_mi2s_data1_sleep>;
+	};
+};
+
+&sm6150_snd {
+	qcom,wsa-max-devs = <0>;
+	qcom,sec-mi2s-gpios = <&cdc_sec_mi2s_gpios>;
+};
+
+&bolero {
+	qcom,num-macros = <3>;
+};
+
+&qupv3_se3_i2c {
+	status = "disabled";
+	tfa98xx@34 {
+		compatible = "nxp,tfa98xx";
+		reg = <0x34>;
+		reset-gpio = <&tlmm 26 0x0>;
+	};
+};
+
+&dai_mi2s0 {
+	qcom,msm-mi2s-rx-lines = <1>;
+	qcom,msm-mi2s-tx-lines = <2>;
+};
+
+&dai_mi2s1 {
+	qcom,msm-mi2s-tx-lines = <2>;
+};
+
+&tlmm {
+	sec_mi2s_sck_ws {
+		sec_mi2s_sck_sleep: sec_mi2s_sck_sleep {
+			mux {
+				pins = "gpio125";
+				function = "sec_mi2s";
+			};
+
+			configs {
+				pins = "gpio125";
+				drive-strength = <2>;
+				output-low;
+			};
+		};
+
+		sec_mi2s_sck_active: sec_mi2s_sck_active {
+			mux {
+				pins = "gpio125";
+				function = "sec_mi2s";
+			};
+
+			configs {
+				pins = "gpio125";
+				drive-strength = <8>;
+				bias-disable;
+				output-high;
+			};
+		};
+
+		sec_mi2s_ws_sleep: sec_mi2s_ws_sleep {
+		   mux {
+			   pins = "gpio126";
+			   function = "sec_mi2s";
+		   };
+
+		   configs {
+			   pins = "gpio126";
+			   drive-strength = <2>;
+		   };
+		};
+
+		sec_mi2s_ws_active: sec_mi2s_ws_active {
+			mux {
+				pins = "gpio126";
+				function = "sec_mi2s";
+			};
+
+			configs {
+				pins = "gpip126";
+				drive-stength = <8>;
+				bias-disable;
+				output-high;
+			};
+		};
+	};
+
+	sec_mi2s_data0 {
+		sec_mi2s_data0_sleep: sec_mi2s_data0_sleep {
+			mux {
+				pins = "gpio127";
+				function = "sec_mi2s";
+			};
+
+			configs {
+				pins = "gpio127";
+				drive-strength = <2>;
+				input-enable;
+				bias-pull-down;
+			};
+		};
+
+		sec_mi2s_data0_active: sec_mi2s_data0_active {
+			mux {
+				pins = "gpio127";
+				function = "sec_mi2s";
+			};
+
+			configs {
+				pins = "gpio127";
+				drive-strength = <8>;
+				bias-disable;
+				output-high;
+			};
+		};
+	};
+
+	sec_mi2s_data1 {
+		sec_mi2s_data1_sleep: sec_mi2s_data1_sleep {
+			mux {
+				pins = "gpio128";
+				function = "sec_mi2s";
+			};
+
+			configs {
+				pins = "gpio128";
+				drive-strength = <2>;
+				output-low;
+			};
+		};
+
+		sec_mi2s_data1_active: sec_mi2s_data1_active {
+			mux {
+				pins = "gpio128";
+				function = "sec_mi2s";
+			};
+
+			configs {
+				pins = "gpio128";
+				drive_strength = <8>;
+				bias-disable;
+				output-high;
+			};
+		};
+	};
+
+	pmx_sde_vio {
+		pmx_sde_vio_active: pmx_sde_vio_active {
+			mux {
+				pins = "gpio19";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio19";
+				drive-strength = <2>;   /* 8 mA */
+				bias-pull-down;         /* PULL DOWN */
+				input-enable;
+			};
+		};
+
+		pmx_sde_vio_suspend: pmx_sde_vio_suspend {
+			mux {
+				pins = "gpio19";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio19";
+				drive-strength = <2>;   /* 2 mA */
+				bias-pull-down;         /* PULL DOWN */
+				input-enable;
+			};
+		};
+	};
+};
+
+&sde_dsi {
+	pinctrl-0 = <&sde_dsi_active &sde_te_active &pmx_sde_vio_active>;
+	pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &pmx_sde_vio_suspend>;
+};
+

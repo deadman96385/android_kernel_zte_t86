@@ -27,7 +27,7 @@
 };
 
 &qupv3_se1_i2c {
-	status = "okay";
+	status = "disabled";
 	sx932x:sar@28 {
 		compatible = "Semtech,sx932x";
 		reg = <0x28>;

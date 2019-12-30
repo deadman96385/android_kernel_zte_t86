@@ -1,3 +1,170 @@
+/*
+ * this file is ued to change qualcomm dtsi which can't be changed by overlay
+ */
+#include "zte-sm6125-vendor-imem.dtsi"
+
+/ {
+	aliases {
+		/delete-property/ swr0;
+	};
+};
+
+&pm6125_gpios {
+	key_vol_down {
+		key_vol_down_default: key_vol_down_default {
+			pins = "gpio9";
+			function = "normal";
+			input-enable;
+			bias-pull-up;
+			power-source = <0>;
+		};
+	};
+};
+
+&soc {
+	gpio_keys {
+		compatible = "gpio-keys";
+		label = "gpio-keys";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&key_vol_up_default
+			     &key_vol_down_default &key_custom_default>;
+
+		vol_up {
+			label = "volume_up";
+			gpios = <&pm6125_gpios 5 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <KEY_VOLUMEUP>;
+			linux,can-disable;
+			debounce-interval = <15>;
+			gpio-key,wakeup;
+		};
+		vol_down {
+			label = "volume_down";
+			gpios = <&pm6125_gpios 9 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <KEY_VOLUMEDOWN>;
+			linux,can-disable;
+			debounce-interval = <15>;
+			gpio-key,wakeup;
+		};
+		key_custom {
+			label = "key_custom";
+			gpios = <&tlmm 82 1>;
+			linux,input-type = <1>;
+			linux,code = <KEY_QUICK_SETTING>;
+			linux,can-disable;
+			debounce-interval = <15>;
+			gpio-key,wakeup;
+		};
+	};
+};
+
+
+&soc {
+	/delete-node/ cdc_dmic01_pinctrl;
+	/delete-node/ cdc_dmic23_pinctrl;
+	/delete-node/ wsa_swr_clk_data_pinctrl;
+	/delete-node/ wsa_spkr_en1_pinctrl;
+};
+
+&fsa4480 {
+	status = "disabled";
+};
+
+&sm6150_snd {
+	/delete-property/ qcom,cdc-dmic01-gpios;
+	/delete-property/ qcom,cdc-dmic23-gpios;
+	/delete-property/ fsa4480-i2c-handle;
+	/delete-property/ qcom,wsa-devs;
+};
+
+&bolero {
+	/delete-node/ wsa-macro@0a480000;
+};
+
+&tlmm {
+	/delete-node/ dmic01_clk_active;
+	/delete-node/ dmic01_clk_sleep;
+	/delete-node/ dmic01_data_active;
+	/delete-node/ dmic01_data_sleep;
+	/delete-node/ dmic23_clk_active;
+	/delete-node/ dmic23_clk_sleep;
+	/delete-node/ dmic23_data_active;
+	/delete-node/ dmic23_data_sleep;
+	/delete-node/ wsa_swr_clk_pin;
+	/delete-node/ wsa_swr_data_pin;
+	/delete-node/ spkr_1_sd_n;
+
+	key_custom {
+		key_custom_default: key_custom_default {
+			mux {
+				pins = "gpio82";
+				function = "gpio";
+			};
+
+			configs {
+				pins = "gpio82";
+				drive_strength = <8>;
+				bias-pull-up;
+				input-enable;
+			};
+		};
+	};
+};
+
+&sdhc_2 {
+	cd-gpios = <&tlmm 98 GPIO_ACTIVE_HIGH>;
+};
+
+&qupv3_se1_i2c {
+	/delete-node/ nq@28;
+};
+
+&qupv3_se1_i2c_sleep {
+	config {
+		/delete-property/ bias-pull-up;
+		bias-no-pull;
+	};
+};
+
+&sde_dsi_suspend {
+	config {
+		bias-no-pull;
+		/delete-property/ bias-pull-down;
+	};
+};
+
+&qupv3_se1_i2c {
+	status = "disabled";
+	pn5xx@29 {
+		compatible = "nxp,pn5xx";
+		reg = <0x29>;
+		nxp,pn5xx-irq  = <&tlmm 85 0x00>;
+		nxp,pn5xx-ven  = <&tlmm 83 0x00>;
+		nxp,pn5xx-fw-dwnld = <&tlmm 84 0x00>;
+		nxp,pn5xx-clkreq = <&tlmm 95 0x00>;
+		nxp,pn5xx-ese-pwr = <&tlmm 119 0x00>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <85 0>;
+		interrupt-names = "nfc_irq";
+		pinctrl-names = "nfc_active", "nfc_suspend";
+		pinctrl-0 = <&nfc_int_active &nfc_enable_active
+				&nfc_clk_req_active>;
+		pinctrl-1 = <&nfc_int_suspend &nfc_enable_suspend
+				&nfc_clk_req_suspend>;
+		clocks = <&clock_rpmcc RPM_SMD_LN_BB_CLK3>;
+		clock-names = "bb_clk2";
+	};
+};
+
+/* config gpio14/gpio15 at "bias-no-pull" when sleep */
+&qupv3_se3_i2c_sleep {
+	config {
+		bias-no-pull;
+		/delete-property/ bias-pull-up;
+	};
+};
 
 &firmware {
 	android {
@@ -10,5 +177,12 @@
 			};
 		};
 	};
+};
+
+&tlmm {
+	/delete-node/ fpc_reset_int;
+};
+&soc {
+	/delete-node/ fpc1020;
 };
 

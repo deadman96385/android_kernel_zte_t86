@@ -336,7 +336,7 @@
 #define KEY_RFKILL		247	/* Key that controls all radios */
 
 #define KEY_MICMUTE		248	/* Mute / unmute the microphone */
-
+#define KEY_QUICK_SETTING		584	/* custom key for quick setting */
 /* Code 255 is reserved for special needs of AT keyboard driver */
 
 #define BTN_MISC		0x100

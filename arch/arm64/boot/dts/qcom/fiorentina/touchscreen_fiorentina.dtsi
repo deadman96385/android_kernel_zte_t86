@@ -95,7 +95,7 @@
 };
 
 &qupv3_se2_i2c { /* BLSP1 QUP3 */
-	status = "okay";
+	status = "disabled";
 	/delete-node/ synaptics_tcm@20;
 	himax-ts@48 {
 		compatible = "himax,hxcommon";

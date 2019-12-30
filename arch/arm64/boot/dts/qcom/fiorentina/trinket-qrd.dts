@@ -15,3 +15,48 @@
 
 #include "../trinket-qrd.dts"
 #include "qualcomm_base_diff.dtsi"
+#include "fingerprint_fiorentina.dtsi"
+#include "touchscreen_fiorentina.dtsi"
+#include "zte-sm6150-camera-sensor.dtsi"
+
+&soc {
+	charger_policy_service {
+		compatible = "zte,charger-policy-service";
+		policy,enable = <1>;
+		policy,expired-mode-enable = <1>;
+		policy,retry-times = <10>;
+		policy,timeout-seconds = <64800>;/* 18 hours */
+		policy,max-capacity = <70>;
+		policy,min-capacity = <50>;
+		policy,bms-phy-name = "bms";
+		policy,battery-phy-name = "battery";
+		policy,cas-phy-name = "cas";
+	};
+};
+
+&mtp_batterydata {
+	#include "zte_t86_weike_3900mAh.dtsi"
+	#include "zte_t86_tianmao_3900mAh.dtsi"
+};
+
+&pmi632_charger {
+	qcom,usb-icl-ua = <2000000>;
+	qcom,thermal-mitigation = <1950000 1500000 1300000
+			1000000 800000 700000 600000 500000>;
+	qcom,auto-recharge-soc = <99>;
+	qcom,chg-term-src = <1>;
+	qcom,chg-term-current-ma = <(-150)>;
+};
+
+&pmi632_qg {
+	qcom,qg-iterm-ma = <200>;
+	qcom,shutdown_soc_threshold = <30>;
+	qcom,ignore-shutdown-soc-secs = <43200>;
+	qcom,shutdown-temp-diff = <150>;
+};
+
+&soc {
+	zte_misc {
+		compatible = "zte-misc";
+	};
+};

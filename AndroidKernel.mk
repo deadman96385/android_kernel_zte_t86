@@ -232,7 +232,7 @@ $(INSTALLED_DTBIMAGE_TARGET): $(TARGET_PREBUILT_INT_KERNEL) $(INSTALLED_KERNEL_T
 	$(hide) if [ -d "$(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/dts/vendor/" ]; then \
 			cat $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/dts/vendor/qcom/*.dtb $(RTIC_DTB) > $@; \
 		else \
-			cat $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/dts/qcom/*.dtb $(RTIC_DTB) > $@; \
+			cat $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/dts/qcom/$(ZTE_BOARD_NAME)/*.dtb $(RTIC_DTB) > $@; \
 		fi
 
 .PHONY: kerneltags
