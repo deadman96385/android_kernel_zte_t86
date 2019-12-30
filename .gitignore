@@ -125,3 +125,7 @@ all.config
 
 # fetched Android config fragments
 kernel/configs/android-*.cfg
+/drivers/vendor/common/
+/drivers/vendor/soc/qcom/
+/include/vendor/common/
+/include/vendor/soc/qcom/
