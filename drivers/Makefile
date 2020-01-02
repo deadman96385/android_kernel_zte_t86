@@ -190,3 +190,5 @@ obj-$(CONFIG_SENSORS_SSC)	+= sensors/
 obj-$(CONFIG_ESOC)              += esoc/
 # GNSS driver
 obj-$(CONFIG_GNSS_SIRF)		+= gnsssirf/
+obj-$(CONFIG_VENDOR_COMMON_COMPILE)	+= vendor/common/
+obj-$(CONFIG_VENDOR_SOC_QCOM_COMPILE)	+= vendor/soc/qcom/
