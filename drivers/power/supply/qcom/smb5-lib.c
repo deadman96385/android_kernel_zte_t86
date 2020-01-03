@@ -4265,7 +4265,7 @@ int smblib_set_prop_ship_mode(struct smb_charger *chg,
 	smblib_dbg(chg, PR_MISC, "Set ship mode: %d!!\n", !!val->intval);
 
 	rc = smblib_masked_write(chg, SHIP_MODE_REG, SHIP_MODE_EN_BIT,
-			!!val->intval ? SHIP_MODE_EN_BIT : 0);
+			!!(!val->intval) ? SHIP_MODE_EN_BIT : 0);
 	if (rc < 0)
 		dev_err(chg->dev, "Couldn't %s ship mode, rc=%d\n",
 				!!val->intval ? "enable" : "disable", rc);
@@ -4273,6 +4273,19 @@ int smblib_set_prop_ship_mode(struct smb_charger *chg,
 	return rc;
 }
 
+int smblib_get_prop_ship_mode(struct smb_charger *chg)
+{
+	int rc = -1;
+	u8 reg = 0;
+
+	rc = smblib_read(chg, SHIP_MODE_REG, &reg);
+	if (rc < 0)
+		dev_err(chg->dev, "Couldn't get ship mode, rc=%d\n", rc);
+	reg = reg & 0xFE;
+	smblib_dbg(chg, PR_MISC, "Get ship mode: 0x%x!\n", reg);
+
+	return !reg;
+}
 int smblib_set_prop_pd_in_hard_reset(struct smb_charger *chg,
 				const union power_supply_propval *val)
 {
