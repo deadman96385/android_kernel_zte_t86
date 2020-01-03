@@ -22,6 +22,8 @@
 #define DCIN_BASE	0x1400
 #define TYPEC_BASE	0X1500
 #define MISC_BASE	0x1600
+#define FREQ_BASE	0x1800
+#define OTP_BASE	0x1900
 #define MISC_PBS_BASE	0x7500
 
 #define PERPH_TYPE_OFFSET	0x04
