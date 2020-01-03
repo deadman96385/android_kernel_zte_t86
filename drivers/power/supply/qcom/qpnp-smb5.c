@@ -2901,6 +2901,7 @@ static int smb5_determine_initial_status(struct smb5 *chip)
 	union power_supply_propval val;
 	int rc;
 
+	msleep(100);
 	rc = smblib_get_prop_usb_present(chg, &val);
 	if (rc < 0) {
 		pr_err("Couldn't get usb present rc=%d\n", rc);
