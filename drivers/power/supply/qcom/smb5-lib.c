@@ -1835,10 +1835,13 @@ int smblib_get_prop_batt_present(struct smb_charger *chg,
 	return rc;
 }
 
+#define SHUTDOWN_VOLTAGE 3400000
 int smblib_get_prop_batt_capacity(struct smb_charger *chg,
 				  union power_supply_propval *val)
 {
 	int rc = -EINVAL;
+	union power_supply_propval temp_val = {-1, };
+	int bat_voltage = -1;
 
 	if (chg->fake_capacity >= 0) {
 		val->intval = chg->fake_capacity;
@@ -1846,7 +1849,14 @@ int smblib_get_prop_batt_capacity(struct smb_charger *chg,
 	}
 
 	rc = smblib_get_prop_from_bms(chg, POWER_SUPPLY_PROP_CAPACITY, val);
-
+	if (val->intval == 0) {
+		rc = smblib_get_prop_from_bms(chg, POWER_SUPPLY_PROP_VOLTAGE_NOW, &temp_val);
+		bat_voltage = temp_val.intval;
+		if (bat_voltage > SHUTDOWN_VOLTAGE) {
+			pr_info("vol is higher than shutdown vol,return soc=1\n");
+			val->intval = 1;
+		}
+	}
 	return rc;
 }
 
