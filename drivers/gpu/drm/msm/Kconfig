@@ -71,6 +71,19 @@ config DRM_MSM_DSI_STAGING
 	  Interface and DSI stands for Display Serial Interface which powers
 	  the primary display of your mobile device.
 
+config ZTE_LCD_COMMON_FUNCTION
+	bool "Enable zte lcd function"
+	default y
+	help
+		Choose this option if use zte lcd function.
+
+config ZTE_LCD_BACKLIGHT_LEVEL_CURVE
+	depends on ZTE_LCD_COMMON_FUNCTION
+	bool "Support for ZTE lcd backlight curve"
+config ZTE_LCD_REG_DEBUG
+	depends on ZTE_LCD_COMMON_FUNCTION
+	bool "Support for ZTE lcd reg read"
+
 config DSI_PARSER
 	bool "Enable DSI panel configuration parser"
 	depends on DYNAMIC_DEBUG

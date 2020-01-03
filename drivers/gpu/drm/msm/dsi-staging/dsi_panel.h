@@ -37,6 +37,35 @@
 
 #define DSI_MODE_MAX 5
 
+/*zte add common function for lcd module begin*/
+#ifdef CONFIG_ZTE_LCD_COMMON_FUNCTION
+struct zte_lcd_ctrl_data {
+		const char *lcd_panel_name;
+		const char *lcd_init_code_version;
+		char lcd_reset_high_sleeping;
+#ifdef CONFIG_ZTE_LCD_BACKLIGHT_LEVEL_CURVE
+		u32 lcd_bl_curve_mode;
+		int (*zte_convert_brightness)(int level, u32 bl_max);
+#endif
+#ifdef CONFIG_ZTE_LCD_HBM_CTRL
+		u32 lcd_hbm_mode;
+		u32 lcd_hdr_on;
+#endif
+#ifdef CONFIG_ZTE_LCD_AOD_BRIGHTNESS_CTRL
+		u32 lcd_aod_brightness;
+#endif
+#ifdef CONFIG_ZTE_LCD_GPIO_CTRL_POWER
+		int disp_avdd_en_gpio;
+		int disp_iovdd_en_gpio;
+		int disp_vsp_en_gpio;
+		int disp_vsn_en_gpio;
+		int (*gpio_enable_lcd_power)(int enable);
+#endif
+};
+#endif
+
+/*zte add common function for lcd module end*/
+
 enum dsi_panel_rotation {
 	DSI_PANEL_ROTATE_NONE = 0,
 	DSI_PANEL_ROTATE_HV_FLIP,
@@ -212,6 +241,9 @@ struct dsi_panel {
 	bool sync_broadcast_en;
 	int power_mode;
 	enum dsi_panel_physical_type panel_type;
+#ifdef CONFIG_ZTE_LCD_COMMON_FUNCTION
+	struct zte_lcd_ctrl_data *zte_lcd_ctrl;
+#endif
 };
 
 static inline bool dsi_panel_ulps_feature_enabled(struct dsi_panel *panel)

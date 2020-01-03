@@ -158,6 +158,13 @@ msm_drm-$(CONFIG_DRM_MSM_DSI_STAGING) += dsi-staging/dsi_phy.o \
 
 msm_drm-$(CONFIG_DSI_PARSER) += dsi-staging/dsi_parser.o
 
+ifeq ($(CONFIG_ZTE_LCD_COMMON_FUNCTION), y)
+msm_drm-$(CONFIG_DRM_MSM_DSI_STAGING) += dsi-staging/zte_lcd_common.o
+ifeq ($(CONFIG_ZTE_LCD_REG_DEBUG), y)
+msm_drm-$(CONFIG_DRM_MSM_DSI_STAGING) += dsi-staging/zte_lcd_reg_debug.o
+endif
+endif
+
 msm_drm-$(CONFIG_DRM_MSM_DSI_PLL) += dsi/pll/dsi_pll.o \
 				dsi/pll/dsi_pll_28nm.o
 

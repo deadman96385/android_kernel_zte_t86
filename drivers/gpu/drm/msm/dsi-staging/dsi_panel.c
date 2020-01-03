@@ -24,6 +24,13 @@
 #include "dsi_ctrl_hw.h"
 #include "dsi_parser.h"
 
+/*zte add common function for lcd module begin*/
+#ifdef CONFIG_ZTE_LCD_COMMON_FUNCTION
+#include "zte_lcd_common.h"
+extern struct dsi_panel *g_zte_ctrl_pdata;
+#endif
+/*zte add common function for lcd module end*/
+
 /**
  * topology is currently defined by a set of following 3 values:
  * 1. num of layer mixers
@@ -43,6 +50,11 @@
 #define MAX_PANEL_JITTER		10
 #define DEFAULT_PANEL_PREFILL_LINES	25
 #define TICKS_IN_MICRO_SECOND		1000000
+/*zte add common function for lcd module begin*/
+#ifdef CONFIG_ZTE_LCD_COMMON_FUNCTION
+extern void zte_lcd_common_func(struct dsi_panel *panel, struct device_node *node);
+#endif
+/*zte add common function for lcd module end*/
 
 enum dsi_dsc_ratio_type {
 	DSC_8BPC_8BPP,
@@ -471,6 +483,9 @@ exit:
 	return rc;
 }
 
+#ifdef CONFIG_ZTE_LCD_COMMON_FUNCTION
+extern struct dsi_panel *g_zte_ctrl_pdata;
+#endif
 static int dsi_panel_power_off(struct dsi_panel *panel)
 {
 	int rc = 0;
@@ -478,8 +493,16 @@ static int dsi_panel_power_off(struct dsi_panel *panel)
 	if (gpio_is_valid(panel->reset_config.disp_en_gpio))
 		gpio_set_value(panel->reset_config.disp_en_gpio, 0);
 
-	if (gpio_is_valid(panel->reset_config.reset_gpio))
+	if (gpio_is_valid(panel->reset_config.reset_gpio)) {
+#ifdef CONFIG_ZTE_LCD_COMMON_FUNCTION
+		if (g_zte_ctrl_pdata->zte_lcd_ctrl->lcd_reset_high_sleeping)
+			gpio_set_value(panel->reset_config.reset_gpio, 1);
+		else
+			gpio_set_value(panel->reset_config.reset_gpio, 0);
+#else
 		gpio_set_value(panel->reset_config.reset_gpio, 0);
+#endif
+	}
 
 	if (gpio_is_valid(panel->reset_config.lcd_mode_sel_gpio))
 		gpio_set_value(panel->reset_config.lcd_mode_sel_gpio, 0);
@@ -682,11 +705,38 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 {
 	int rc = 0;
 	struct dsi_backlight_config *bl = &panel->bl_config;
+#if defined(CONFIG_ZTE_LCD_COMMON_FUNCTION) && defined(CONFIG_ZTE_LCD_BACKLIGHT_LEVEL_CURVE)
+	u32 pre_lvl = 0;
+#endif
 
 	if (panel->host_config.ext_bridge_num)
 		return 0;
+#if defined(CONFIG_ZTE_LCD_COMMON_FUNCTION) && defined(CONFIG_ZTE_LCD_BACKLIGHT_LEVEL_CURVE)
+	pre_lvl = bl_lvl;
+	if (!g_zte_ctrl_pdata->zte_lcd_ctrl) {
+		pr_info("[MSM_LCD] %s: no llcd backlight curve\n", __func__);
+	} else {
+		bl_lvl = g_zte_ctrl_pdata->zte_lcd_ctrl->zte_convert_brightness(bl_lvl,
+							panel->bl_config.bl_max_level);
+		if ((bl_lvl > panel->bl_config.bl_max_level) && (bl_lvl != 0))
+			bl_lvl = panel->bl_config.bl_max_level;
 
-	pr_debug("backlight type:%d lvl:%d\n", bl->type, bl_lvl);
+		if ((bl_lvl < panel->bl_config.bl_min_level) && (bl_lvl != 0))
+			bl_lvl = panel->bl_config.bl_min_level;
+		pr_info("[MSM_LCD] %s: change bl_level from old %d to new %d!\n", __func__, pre_lvl, bl_lvl);
+	}
+#else
+	if ((bl_lvl > panel->bl_config.bl_max_level) && (bl_lvl != 0))
+		bl_lvl = panel->bl_config.bl_max_level;
+
+	if ((bl_lvl < panel->bl_config.bl_min_level) && (bl_lvl != 0))
+		bl_lvl = panel->bl_config.bl_min_level;
+
+	pr_info("MSM_LCD backlight type:%d bl_level:%d\n", bl->type, bl_lvl);
+#endif
+	if (!strcmp(panel->name, "ft8719 video mode dsi skyworth panel")) {
+		bl_lvl |= bl_lvl << 8;
+	}
 	switch (bl->type) {
 	case DSI_BACKLIGHT_WLED:
 		rc = backlight_device_set_brightness(bl->raw_bd, bl_lvl);
@@ -3268,6 +3318,11 @@ struct dsi_panel *dsi_panel_get(struct device *parent,
 	if (rc)
 		pr_err("failed to parse power config, rc=%d\n", rc);
 
+	/*zte add common function for lcd module begin*/
+	#ifdef CONFIG_ZTE_LCD_COMMON_FUNCTION
+	zte_lcd_common_func(panel, of_node);
+	#endif
+	/*zte add common function for lcd module end*/
 	rc = dsi_panel_parse_bl_config(panel);
 	if (rc) {
 		pr_err("failed to parse backlight config, rc=%d\n", rc);
