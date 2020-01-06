@@ -22,6 +22,7 @@
 #include <linux/extcon.h>
 #include <linux/usb/class-dual-role.h>
 #include "storm-watch.h"
+#include <vendor/common/zte_misc.h>
 
 enum print_reason {
 	PR_INTERRUPT	= BIT(0),
@@ -579,6 +580,7 @@ struct smb_charger {
 
 	/* wireless */
 	int			wireless_vout;
+	int			enable_to_dump_reg;
 };
 
 int smblib_read(struct smb_charger *chg, u16 addr, u8 *val);

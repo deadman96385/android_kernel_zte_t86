@@ -7016,7 +7016,8 @@ static void update_heartbeat(struct work_struct *work)
 	g_update_heartbeat_count++;
 	if ((usb_present &&  charge_type == POWER_SUPPLY_CHARGE_TYPE_NONE
 		&& (status != POWER_SUPPLY_STATUS_FULL || capacity != 100)
-		&& batt_health == POWER_SUPPLY_HEALTH_GOOD && g_update_heartbeat_count > 1)) {
+		&& batt_health == POWER_SUPPLY_HEALTH_GOOD && g_update_heartbeat_count > 1)
+		|| chg->enable_to_dump_reg == 0xAA) {
 		smblib_charger_present_but_not_charging(chg);
 		/*
 		if (!enable_to_dump_reg && chg->system_temp_level != chg->thermal_levels) {
@@ -7041,6 +7042,46 @@ static void update_heartbeat(struct work_struct *work)
 		schedule_delayed_work(&chg->update_heartbeat_work, msecs_to_jiffies(HEARTBEAT_MS));
 	}
 }
+int enable_to_dump_reg_set(const char *val, const void *arg)
+{
+	struct smb_charger *chg = (struct smb_charger *) arg;
+	int dump_val = 0;
+	int ret = 0;
+
+	if (!chg) {
+		pr_info("chg is null\n");
+		return -EINVAL;
+	}
+
+	ret = sscanf(val, "%d", &dump_val);
+	if (ret != 1) {
+		pr_info("para is invalid\n");
+		return -EINVAL;
+	}
+	chg->enable_to_dump_reg = dump_val;
+	return 0;
+}
+
+int enable_to_dump_reg_get(char *val, const void *arg)
+{
+	struct smb_charger *chg = (struct smb_charger *) arg;
+
+	if (!chg) {
+		pr_info("chg is null\n");
+		return snprintf(val, PAGE_SIZE, "arg is null");
+	}
+
+	return snprintf(val, PAGE_SIZE, "%u", chg->enable_to_dump_reg);
+}
+
+struct zte_misc_ops enable_to_dump_reg_node = {
+	.node_name = "enable_to_dump_reg",
+	.set = enable_to_dump_reg_set,
+	.get = enable_to_dump_reg_get,
+	.free = NULL,
+	.arg = NULL,
+};
+
 
 static int smblib_create_votables(struct smb_charger *chg)
 {
@@ -7230,6 +7271,8 @@ int smblib_init(struct smb_charger *chg)
 	INIT_DELAYED_WORK(&chg->pr_swap_detach_work,
 					smblib_pr_swap_detach_work);
 	INIT_DELAYED_WORK(&chg->update_heartbeat_work, update_heartbeat);
+	chg->enable_to_dump_reg = 0;
+	zte_misc_register_callback(&enable_to_dump_reg_node, chg);
 
 	if (chg->wa_flags & CHG_TERMINATION_WA) {
 		INIT_WORK(&chg->chg_termination_work,
