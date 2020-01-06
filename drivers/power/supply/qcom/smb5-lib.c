@@ -1850,6 +1850,11 @@ int smblib_get_prop_batt_capacity(struct smb_charger *chg,
 
 	rc = smblib_get_prop_from_bms(chg, POWER_SUPPLY_PROP_CAPACITY, val);
 	if (val->intval == 0) {
+		if (!chg->enable_to_shutdown) {
+			val->intval = 1;
+			return rc;
+		}
+
 		rc = smblib_get_prop_from_bms(chg, POWER_SUPPLY_PROP_VOLTAGE_NOW, &temp_val);
 		bat_voltage = temp_val.intval;
 		if (bat_voltage > SHUTDOWN_VOLTAGE) {
@@ -7082,6 +7087,45 @@ struct zte_misc_ops enable_to_dump_reg_node = {
 	.arg = NULL,
 };
 
+int enable_to_shutdown_set(const char *val, const void *arg)
+{
+	struct smb_charger *chg = (struct smb_charger *) arg;
+	int shutdown_val = 0;
+	int ret = 0;
+
+	if (!chg) {
+		pr_info("chg is null\n");
+		return -EINVAL;
+	}
+
+	ret = sscanf(val, "%d", &shutdown_val);
+	if (ret != 1) {
+		pr_info("para is invalid\n");
+		return -EINVAL;
+	}
+	chg->enable_to_shutdown = shutdown_val;
+	return 0;
+}
+
+int enable_to_shutdown_get(char *val, const void *arg)
+{
+	struct smb_charger *chg = (struct smb_charger *) arg;
+
+	if (!chg) {
+		pr_info("chg is null\n");
+		return snprintf(val, PAGE_SIZE, "arg is null");
+	}
+
+	return snprintf(val, PAGE_SIZE, "%u", chg->enable_to_shutdown);
+}
+
+struct zte_misc_ops enable_to_shutdown_node = {
+	.node_name = "enable_to_shutdown",
+	.set = enable_to_shutdown_set,
+	.get = enable_to_shutdown_get,
+	.free = NULL,
+	.arg = NULL,
+};
 
 static int smblib_create_votables(struct smb_charger *chg)
 {
@@ -7272,7 +7316,9 @@ int smblib_init(struct smb_charger *chg)
 					smblib_pr_swap_detach_work);
 	INIT_DELAYED_WORK(&chg->update_heartbeat_work, update_heartbeat);
 	chg->enable_to_dump_reg = 0;
+	chg->enable_to_shutdown = 1;
 	zte_misc_register_callback(&enable_to_dump_reg_node, chg);
+	zte_misc_register_callback(&enable_to_shutdown_node, chg);
 
 	if (chg->wa_flags & CHG_TERMINATION_WA) {
 		INIT_WORK(&chg->chg_termination_work,

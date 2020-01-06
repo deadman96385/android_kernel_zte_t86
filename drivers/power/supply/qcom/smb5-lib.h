@@ -581,6 +581,7 @@ struct smb_charger {
 	/* wireless */
 	int			wireless_vout;
 	int			enable_to_dump_reg;
+	int			enable_to_shutdown;
 };
 
 int smblib_read(struct smb_charger *chg, u16 addr, u8 *val);
