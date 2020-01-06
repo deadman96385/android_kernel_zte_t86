@@ -1000,6 +1000,28 @@ static void smblib_rerun_apsd(struct smb_charger *chg)
 		smblib_err(chg, "Couldn't re-run APSD rc=%d\n", rc);
 }
 
+extern int charge_type_oem;
+void smblib_set_charger_type(struct smb_charger *chg)
+{
+	switch (chg->real_charger_type) {
+	case POWER_SUPPLY_TYPE_USB:
+		charge_type_oem = CHARGER_TYPE_DEFAULT;
+		break;
+	case POWER_SUPPLY_TYPE_USB_CDP:
+	case POWER_SUPPLY_TYPE_USB_DCP:
+	case POWER_SUPPLY_TYPE_USB_FLOAT:
+		charge_type_oem = CHARGER_TYPE_5V_ADAPTER;
+		break;
+	case POWER_SUPPLY_TYPE_USB_HVDCP:
+	case POWER_SUPPLY_TYPE_USB_HVDCP_3:
+		charge_type_oem = CHARGER_TYPE_FAST_CHARGER;
+		break;
+	default:
+		charge_type_oem = CHARGER_TYPE_DEFAULT;
+		break;
+	}
+	smblib_dbg(chg, PR_MISC, "charge_type_oem=%d\n", charge_type_oem);
+}
 static const struct apsd_result *smblib_update_usb_type(struct smb_charger *chg)
 {
 	const struct apsd_result *apsd_result = smblib_get_apsd_result(chg);
@@ -1019,6 +1041,7 @@ static const struct apsd_result *smblib_update_usb_type(struct smb_charger *chg)
 
 	smblib_dbg(chg, PR_MISC, "APSD=%s PD=%d\n",
 					apsd_result->name, chg->pd_active);
+	smblib_set_charger_type(chg);
 	return apsd_result;
 }
 
