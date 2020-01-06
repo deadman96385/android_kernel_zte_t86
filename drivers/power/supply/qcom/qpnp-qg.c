@@ -3058,6 +3058,8 @@ static int qg_determine_pon_soc(struct qpnp_qg *chip)
 	u32 ocv_uv = 0, soc = 0, pon_soc = 0, full_soc = 0, cutoff_soc = 0;
 	u32 shutdown[SDAM_MAX] = {0}, soc_raw = 0;
 	char ocv_type[20] = "NONE";
+	int vbat_uv = 0;
+	int is_ocv_valid = 0;
 
 	if (!chip->profile_loaded) {
 		qg_dbg(chip, QG_DEBUG_PON, "No Profile, skipping PON soc\n");
@@ -3118,6 +3120,11 @@ static int qg_determine_pon_soc(struct qpnp_qg *chip)
 	if (!shutdown[SDAM_VALID])
 		goto use_pon_ocv;
 
+	if ((chip->dt.shutdown_soc_threshold != -EINVAL) &&
+			!is_between(0, chip->dt.shutdown_soc_threshold,
+			abs(pon_soc - shutdown[SDAM_SOC])))
+		goto use_pon_ocv;
+
 	if (!is_between(0, chip->dt.ignore_shutdown_soc_secs,
 			(rtc_sec - shutdown[SDAM_TIME_SEC])))
 		goto use_pon_ocv;
@@ -3125,11 +3132,6 @@ static int qg_determine_pon_soc(struct qpnp_qg *chip)
 	if (!is_between(0, chip->dt.shutdown_temp_diff,
 			abs(shutdown_temp -  batt_temp)) &&
 			(shutdown_temp < 0 || batt_temp < 0))
-		goto use_pon_ocv;
-
-	if ((chip->dt.shutdown_soc_threshold != -EINVAL) &&
-			!is_between(0, chip->dt.shutdown_soc_threshold,
-			abs(pon_soc - shutdown[SDAM_SOC])))
 		goto use_pon_ocv;
 
 	use_pon_ocv = false;
@@ -3217,6 +3219,19 @@ done:
 	if (rc < 0) {
 		pr_err("Failed to get %s @ PON, rc=%d\n", ocv_type, rc);
 		return rc;
+	}
+
+	if (!shutdown[SDAM_VALID] && !shutdown[SDAM_OCV_UV]) {
+		qg_get_battery_voltage(chip, &vbat_uv);
+		is_ocv_valid = abs(vbat_uv - ocv_uv) < 250000 ? 1 : 0;  /* 250mV is a experience value */
+		pr_info("ocv_uv =%d, vbat_uv= %d is_ocv_valid=%d\n", ocv_uv, vbat_uv, is_ocv_valid);
+		if (!is_ocv_valid) {
+			ocv_uv = vbat_uv;
+			rc = lookup_soc_ocv(&soc, ocv_uv, batt_temp, false);
+			if (rc < 0) {
+				pr_err("failed to lookup SOC@VOL rc=%d\n", rc);
+			}
+		}
 	}
 
 	chip->cc_soc = chip->sys_soc = soc_raw;
