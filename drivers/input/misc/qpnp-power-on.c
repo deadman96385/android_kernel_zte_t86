@@ -246,6 +246,9 @@ struct qpnp_pon {
 	bool			kpdpwr_dbc_enable;
 	bool			resin_pon_reset;
 	ktime_t			kpdpwr_last_release_time;
+	#ifdef CONFIG_ENABLE_POWER_REASON_NODE
+	struct spmi_device	*spmi;
+	#endif
 	/*ZTE ADD for BOOT_MODE start*/
 	struct timer_list       timer;
 	struct work_struct      pwrkey_poweroff_work;
@@ -326,6 +329,25 @@ static const char * const qpnp_poff_reason[] = {
 	[38] = "Triggered from S3_RESET_PBS_NACK",
 	[39] = "Triggered from S3_RESET_KPDPWR_ANDOR_RESIN",
 };
+
+#ifdef CONFIG_ENABLE_POWER_REASON_NODE
+static int
+qpnp_pon_masked_read(struct qpnp_pon *pon, u16 addr)
+{
+	int rc;
+	u8 reg;
+
+	rc = spmi_ext_register_readl(pon->spmi->ctrl, pon->spmi->sid,
+							addr, &reg, 1);
+	if (rc) {
+		dev_err(&pon->spmi->dev,
+			"Unable to read from addr=%hx, rc(%d)\n",
+			addr, rc);
+		return rc;
+	}
+	return reg;
+}
+#endif
 
 static int qpnp_pon_store_reg(struct qpnp_pon *pon, u16 addr)
 {
@@ -408,6 +430,26 @@ static bool is_pon_gen2(struct qpnp_pon *pon)
 	return pon->subtype == PON_GEN2_PRIMARY ||
 		pon->subtype == PON_GEN2_SECONDARY;
 }
+
+#ifdef CONFIG_ENABLE_POWER_REASON_NODE
+int qpnp_pon_read_restart_reason(void)
+{
+	int rc = 0;
+	struct qpnp_pon *pon = sys_reset_dev;
+
+	if (!pon)
+		return 0;
+	if (!pon->store_hard_reset_reason)
+		return 0;
+	rc = qpnp_pon_masked_read(pon, QPNP_PON_SOFT_RB_SPARE(pon));
+	if (rc)
+		dev_err(&pon->spmi->dev,
+				"qpnp pon read to addr=%x, rc(%d)\n",
+				QPNP_PON_SOFT_RB_SPARE(pon), rc);
+	return rc;
+}
+EXPORT_SYMBOL(qpnp_pon_read_restart_reason);
+#endif
 
 /**
  * qpnp_pon_set_restart_reason() - Store device restart reason in PMIC register
@@ -2074,6 +2116,79 @@ static void qpnp_pon_debugfs_remove(struct qpnp_pon *pon)
 {}
 #endif
 
+/*****************hww add power reason node start*******************/
+#ifdef CONFIG_ENABLE_POWER_REASON_NODE
+int zte_poweron_reason;
+int zte_poweroff_reason;
+extern int zte_power_panic;
+static ssize_t zte_poweron_reason_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	int ret = 0;
+
+	if (zte_poweron_reason >= 0 && zte_poweron_reason < ARRAY_SIZE(qpnp_pon_reason)) {
+		ret = snprintf(buf, 64, "%s\n", qpnp_pon_reason[zte_poweron_reason]);
+	} else {
+		ret = snprintf(buf, 64, "ZTE Power-on reason mismatch\n");
+	}
+	return ret;
+}
+static ssize_t zte_poweroff_reason_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	int retval = 0;
+
+	if (zte_poweroff_reason >= 0 && zte_poweroff_reason < ARRAY_SIZE(qpnp_poff_reason)) {
+		retval = snprintf(buf, 64, "%s\n", qpnp_poff_reason[zte_poweroff_reason]);
+	} else {
+		retval = snprintf(buf, 64, "ZTE Power-off reason mismatch\n");
+	}
+	return retval;
+}
+static ssize_t zte_restart_reason_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	int retvalue = 0;
+
+	if (zte_power_panic == PON_RESTART_REASON_PANIC) {
+		retvalue = snprintf(buf, 64, "ZTE Power-restart from Panic !\n");
+	} else {
+		retvalue = snprintf(buf, 64, "ZTE Power-restart Normal !\n");
+	}
+	return retvalue;
+}
+static DEVICE_ATTR(zte_poweron_reason, 0664,  zte_poweron_reason_show, NULL);
+static DEVICE_ATTR(zte_poweroff_reason, 0664,  zte_poweroff_reason_show, NULL);
+static DEVICE_ATTR(zte_restart_reason, 0664,  zte_restart_reason_show, NULL);
+static struct attribute *zte_power_reason_attributes[] = {
+	&dev_attr_zte_poweron_reason.attr,
+	&dev_attr_zte_poweroff_reason.attr,
+	&dev_attr_zte_restart_reason.attr,
+		NULL,
+};
+static struct attribute_group zte_power_reason_attribute_group = {
+	.attrs = zte_power_reason_attributes
+};
+int zte_power_reason_debug_func(void)
+{
+	int err = 0;
+	struct kobject *zte_power_reason_kobj;
+
+	zte_power_reason_kobj = kobject_create_and_add("power_reason", NULL);
+	if (!zte_power_reason_kobj) {
+		err = -EINVAL;
+		pr_info("%s() - ERROR Unable to create zte_power_reason_kobj.\n", __func__);
+		return -EIO;
+	}
+	err = sysfs_create_group(zte_power_reason_kobj, &zte_power_reason_attribute_group);
+	if (err != 0) {
+		pr_info("%s - ERROR zte_power_reason_kobj failed.\n", __func__);
+		kobject_put(zte_power_reason_kobj);
+		return -EIO;
+	}
+	pr_info("%s succeeded.\n", __func__);
+	return err;
+}
+#endif
+/*****************hww add power reason node end*******************/
+
 static int qpnp_pon_read_gen2_pon_off_reason(struct qpnp_pon *pon, u16 *reason,
 					int *reason_index_offset)
 {
@@ -2225,6 +2340,9 @@ static int qpnp_pon_read_hardware_info(struct qpnp_pon *pon, bool sys_reset)
 	if (sys_reset)
 		boot_reason = ffs(pon_sts);
 
+#ifdef CONFIG_ENABLE_POWER_REASON_NODE
+	zte_poweron_reason = ffs(pon_sts) - 1;
+#endif
 	index = ffs(pon_sts) - 1;
 	cold_boot = sys_reset_dev ? !_qpnp_pon_is_warm_reset(sys_reset_dev)
 				  : !_qpnp_pon_is_warm_reset(pon);
@@ -2256,6 +2374,9 @@ static int qpnp_pon_read_hardware_info(struct qpnp_pon *pon, bool sys_reset)
 		}
 		poff_sts = buf[0] | (buf[1] << 8);
 	}
+#ifdef CONFIG_ENABLE_POWER_REASON_NODE
+	zte_poweroff_reason  = ffs(poff_sts) - 1 + reason_index_offset;
+#endif
 	index = ffs(poff_sts) - 1 + reason_index_offset;
 	if (index >= ARRAY_SIZE(qpnp_poff_reason) || index < 0) {
 		dev_info(dev, "PMIC@SID%d: Unknown power-off reason\n",
@@ -2478,7 +2599,11 @@ static int qpnp_pon_probe(struct platform_device *pdev)
 		sys_reset_dev = pon;
 
 	qpnp_pon_debugfs_init(pon);
-
+/***********hww add power reason node start**************/
+#ifdef CONFIG_ENABLE_POWER_REASON_NODE
+	zte_power_reason_debug_func();
+#endif
+/***********hww add power reason node end**************/
 	return 0;
 }
 

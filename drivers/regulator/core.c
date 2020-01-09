@@ -4941,6 +4941,7 @@ unlock:
 
 static int __init regulator_init_complete(void)
 {
+	return 0;
 	/*
 	 * Since DT doesn't provide an idiomatic mechanism for
 	 * enabling full constraints and since it's much more natural
