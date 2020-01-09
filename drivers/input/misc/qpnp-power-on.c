@@ -27,11 +27,21 @@
 #include <linux/power_supply.h>
 #include <linux/regmap.h>
 #include <linux/slab.h>
-#include <linux/spmi.h>
 #include <linux/input/qpnp-power-on.h>
 #include <linux/regulator/driver.h>
 #include <linux/regulator/machine.h>
 #include <linux/regulator/of_regulator.h>
+#include <soc/qcom/restart.h>
+#include <linux/of_platform.h>
+#include <linux/of_address.h>
+#include <linux/reboot.h>
+#include <soc/qcom/socinfo.h>
+#include <linux/gpio.h>
+#ifdef CONFIG_ENABLE_POWER_REASON_NODE
+#include <linux/msm_spmi.h>
+#else
+#include <linux/spmi.h>
+#endif
 
 #define PMIC_VER_8941				0x01
 #define PMIC_VERSION_REG			0x0105
@@ -236,6 +246,10 @@ struct qpnp_pon {
 	bool			kpdpwr_dbc_enable;
 	bool			resin_pon_reset;
 	ktime_t			kpdpwr_last_release_time;
+	/*ZTE ADD for BOOT_MODE start*/
+	struct timer_list       timer;
+	struct work_struct      pwrkey_poweroff_work;
+	/*ZTE ADD for BOOT_MODE end*/
 };
 
 static int pon_ship_mode_en;
@@ -896,6 +910,79 @@ static int qpnp_pon_store_and_clear_warm_reset(struct qpnp_pon *pon)
 	return 0;
 }
 
+/*ZTE ADD for BOOT_MODE start*/
+#define PM_GPIO_5 1267
+#define PM_GPIO_9 1271
+#define SCM_DLOAD_FULLDUMP 0x10
+extern int scm_set_dload_mode(int arg1, int arg2);
+static void vendor_mod_ponreg(struct qpnp_pon *pon)
+{
+	pr_info("%s: modify s2 warm reset\n", __func__);
+	qpnp_pon_masked_write(pon, QPNP_PON_KPDPWR_S2_CNTL(pon),
+								QPNP_PON_S2_CNTL_TYPE_MASK,
+								(u8)PON_POWER_OFF_TYPE_WARM_RESET);
+}
+
+static bool vendor_volkeys_pressed(void)
+{
+	int val1;
+	int val2;
+
+	gpio_direction_input(PM_GPIO_5);
+
+	val1 = !gpio_get_value(PM_GPIO_5);
+
+	gpio_direction_input(PM_GPIO_9);
+
+	val2 = !gpio_get_value(PM_GPIO_9);
+
+	pr_info("%s: vol down %d, vol up %d\n", __func__, val1, val2);
+
+	return val1 && val2;
+}
+
+static void pwrkey_timer(unsigned long data)
+{
+	struct qpnp_pon *pon = (struct qpnp_pon *)data;
+
+	schedule_work(&pon->pwrkey_poweroff_work);
+}
+
+static void pwrkey_poweroff(struct work_struct *work)
+{
+	int ret;
+	struct qpnp_pon *pon = container_of(work, struct qpnp_pon, pwrkey_poweroff_work);
+
+	if (vendor_volkeys_pressed()) {
+		pr_info("%s: power key long pressed, trigger s2 warm reset\n", __func__);
+		ret = scm_set_dload_mode(SCM_DLOAD_FULLDUMP, 0);
+		if (ret)
+			pr_err("Failed to set secure DLOAD mode: %d\n", ret);
+		vendor_mod_ponreg(pon);
+	} else {
+		pr_info("%s: power key long pressed, trigger kernel reboot\n", __func__);
+		kernel_restart("LONGPRESS");
+	}
+}
+
+extern int socinfo_get_ftm_flag(void);
+void zte_set_timer(struct qpnp_pon *pon)
+{
+	if (socinfo_get_ftm_flag() == 1) {
+		pon->timer.expires = jiffies + 3 * HZ;
+		pr_info("%s: FTM mode,start 3s timer for reboot\n", __func__);
+	} else {
+		#ifdef CONFIG_ZTE_PWRKEY_HARDRESET_TIMEOUT
+			pon->timer.expires = jiffies + CONFIG_ZTE_PWRKEY_HARDRESET_TIMEOUT * HZ;
+			pr_info("%s: Normal mode,start 16s timer for reboot\n", __func__);
+		#else
+			pon->timer.expires = jiffies + 10 * HZ;
+			pr_info("%s: Normal mode,start 10s timer for reboot\n", __func__);
+		#endif
+	}
+	mod_timer(&pon->timer, pon->timer.expires);
+}
+/*ZTE ADD for BOOT_MODE end*/
 static struct qpnp_pon_config *qpnp_get_cfg(struct qpnp_pon *pon, u32 pon_type)
 {
 	int i;
@@ -979,6 +1066,12 @@ static int qpnp_pon_input_dispatch(struct qpnp_pon *pon, u32 pon_type)
 
 	cfg->old_state = !!key_status;
 
+/*ZTE ADD for BOOT_MODE start*/
+	if ((cfg->pon_type == PON_KPDPWR) && key_status)
+		zte_set_timer(pon);
+	else
+		del_timer(&pon->timer);
+/*ZTE ADD for BOOT_MODE end*/
 	return 0;
 }
 
@@ -2361,6 +2454,13 @@ static int qpnp_pon_probe(struct platform_device *pdev)
 		spin_unlock_irqrestore(&spon_list_slock, flags);
 		pon->is_spon = true;
 	}
+
+	/*ZTE ADD for BOOT_MODE start*/
+	init_timer(&pon->timer);
+	pon->timer.data = (unsigned long)pon;
+	pon->timer.function = pwrkey_timer;
+	INIT_WORK(&pon->pwrkey_poweroff_work, pwrkey_poweroff);
+	/*ZTE ADD for BOOT_MODE end*/
 
 	/* Register the PON configurations */
 	rc = qpnp_pon_config_init(pon, pdev);
