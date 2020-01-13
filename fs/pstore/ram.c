@@ -637,7 +637,9 @@ static int ramoops_init_prz(const char *name,
 		return err;
 	}
 
+#ifndef CONFIG_PSTORE_REUSE_EXISTING_BUFFER
 	persistent_ram_zap(*prz);
+#endif
 
 	*paddr += sz;
 
