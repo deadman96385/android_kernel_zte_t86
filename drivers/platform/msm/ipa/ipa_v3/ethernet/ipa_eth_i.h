@@ -180,6 +180,7 @@ void ipa_eth_net_close_device(struct ipa_eth_device *eth_dev);
 int ipa_eth_net_save_regs(struct ipa_eth_device *eth_dev);
 
 int ipa_eth_ep_init_headers(struct ipa_eth_device *eth_dev);
+int ipa_eth_ep_deinit_headers(struct ipa_eth_device *eth_dev);
 int ipa_eth_ep_register_interface(struct ipa_eth_device *eth_dev);
 int ipa_eth_ep_unregister_interface(struct ipa_eth_device *eth_dev);
 void ipa_eth_ep_init_ctx(struct ipa_eth_channel *ch, bool vlan_mode);
@@ -193,9 +194,16 @@ int ipa_eth_pm_deactivate(struct ipa_eth_device *eth_dev);
 
 int ipa_eth_pm_vote_bw(struct ipa_eth_device *eth_dev);
 
+int ipa_eth_uc_stats_init(struct ipa_eth_device *eth_dev);
+int ipa_eth_uc_stats_deinit(struct ipa_eth_device *eth_dev);
+int ipa_eth_uc_stats_start(struct ipa_eth_device *eth_dev);
+int ipa_eth_uc_stats_stop(struct ipa_eth_device *eth_dev);
+
 /* ipa_eth_utils.c APIs */
 
 const char *ipa_eth_device_event_name(enum ipa_eth_device_event event);
+int ipa_eth_send_msg_connect(struct ipa_eth_device *eth_dev);
+int ipa_eth_send_msg_disconnect(struct ipa_eth_device *eth_dev);
 
 void *ipa_eth_get_ipc_logbuf(void);
 void *ipa_eth_get_ipc_logbuf_dbg(void);
