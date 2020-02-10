@@ -136,7 +136,7 @@
 };
 
 &qupv3_se1_i2c {
-	status = "disabled";
+	status = "ok";
 	pn5xx@29 {
 		compatible = "nxp,pn5xx";
 		reg = <0x29>;
