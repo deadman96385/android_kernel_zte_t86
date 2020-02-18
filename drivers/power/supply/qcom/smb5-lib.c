@@ -2488,6 +2488,10 @@ static int smblib_hvdcp3_set_fsw(struct smb_charger *chg)
 	return 0;
 }
 
+#ifdef ENABLE_HVDCP3_TO_9V
+int hvdcp3_force9v_success = 0;
+#endif
+
 static void smblib_hvdcp_adaptive_voltage_change(struct smb_charger *chg)
 {
 	int rc;
@@ -2519,7 +2523,13 @@ int smblib_dp_dm(struct smb_charger *chg, int val)
 	int target_icl_ua, rc = 0;
 	union power_supply_propval pval;
 	u8 stat;
-
+#ifdef ENABLE_HVDCP3_TO_9V
+	smblib_dbg(chg, PR_MISC, "val=%d hvdcp3_force9v_success = %d\n", val, hvdcp3_force9v_success);
+	if (hvdcp3_force9v_success) {
+		smblib_dbg(chg, PR_MISC, "force9v success direct return\n");
+		return 0;
+	}
+#endif
 	switch (val) {
 	case POWER_SUPPLY_DP_DM_DP_PULSE:
 		/*
@@ -5343,6 +5353,25 @@ static void smblib_handle_hvdcp_3p0_auth_done(struct smb_charger *chg,
 
 	smblib_dbg(chg, PR_INTERRUPT, "IRQ: hvdcp-3p0-auth-done rising; %s detected\n",
 		   apsd_result->name);
+#ifdef ENABLE_HVDCP3_TO_9V
+	if ((!hvdcp3_force9v_success) && (chg->real_charger_type == POWER_SUPPLY_TYPE_USB_HVDCP_3)
+		&& chg->pulse_cnt == 1) {
+		rc = smblib_dp_dm(chg, POWER_SUPPLY_DP_DM_FORCE_5V);
+		if (rc < 0) {
+			dev_err(chg->dev, "Couldn't force_5V rc=%d\n", rc);
+			return;
+		}
+		msleep(1000);
+		smblib_dp_dm(chg, POWER_SUPPLY_DP_DM_FORCE_9V);
+		if (rc < 0) {
+			dev_err(chg->dev, "Couldn't force_9V rc=%d\n", rc);
+			return;
+		}
+		vote(chg->usb_icl_votable, HVDCP2_ICL_VOTER, false, 0);
+		smblib_dbg(chg, PR_INTERRUPT, "force9V success\n");
+		hvdcp3_force9v_success = 1;
+	}
+#endif
 }
 
 static void smblib_handle_hvdcp_check_timeout(struct smb_charger *chg,
@@ -5684,6 +5713,9 @@ static void typec_src_insertion(struct smb_charger *chg)
 	/* allow apsd proceed to detect QC2/3 */
 	if (!chg->ok_to_pd)
 		smblib_hvdcp_detect_enable(chg, true);
+#ifdef ENABLE_HVDCP3_TO_9V
+	hvdcp3_force9v_success = 0;
+#endif
 }
 
 static void typec_ra_ra_insertion(struct smb_charger *chg)
@@ -5843,6 +5875,9 @@ static void typec_src_removal(struct smb_charger *chg)
 		smblib_notify_device_mode(chg, false);
 
 	chg->typec_legacy = false;
+#ifdef ENABLE_HVDCP3_TO_9V
+	hvdcp3_force9v_success = 0;
+#endif
 }
 
 static void typec_mode_unattached(struct smb_charger *chg)

@@ -248,6 +248,9 @@ module_param_named(
 	weak_chg_icl_ua, __weak_chg_icl_ua, int, 0600
 );
 
+#ifdef ENABLE_HVDCP3_TO_9V
+extern int hvdcp3_force9v_success;
+#endif
 enum {
 	BAT_THERM = 0,
 	MISC_THERM,
@@ -1296,9 +1299,14 @@ static int smb5_usb_main_set_prop(struct power_supply *psy,
 							true, SDP_100_MA);
 			}
 
-			pr_debug("flash active VBUS 5V restriction %s\n",
+			pr_info("flash active VBUS 5V restriction %s\n",
 				chg->flash_active ? "applied" : "removed");
-
+#ifdef ENABLE_HVDCP3_TO_9V
+			if (!chg->flash_active) {
+				pr_info("flash active VBUS 5V restriction clear\n");
+				hvdcp3_force9v_success = 0;
+			}
+#endif
 			/* Update userspace */
 			if (chg->batt_psy)
 				power_supply_changed(chg->batt_psy);

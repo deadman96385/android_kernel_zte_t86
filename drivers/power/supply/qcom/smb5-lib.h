@@ -110,6 +110,7 @@ enum print_reason {
 #define DCIN_ICL_STEP_UA		100000
 
 #define ROLE_REVERSAL_DELAY_MS		2000
+#define ENABLE_HVDCP3_TO_9V	/* enable hvdcp3.0 to output 9V */
 
 enum smb_mode {
 	PARALLEL_MASTER = 0,
