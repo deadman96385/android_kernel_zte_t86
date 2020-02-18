@@ -2335,13 +2335,31 @@ int smblib_set_prop_system_temp_level(struct smb_charger *chg,
 	if (chg->system_temp_level == chg->thermal_levels)
 		return vote(chg->chg_disable_votable,
 			THERMAL_DAEMON_VOTER, true, 0);
-
+	pr_info("system_temp_level=%d, current=%d\n", chg->system_temp_level,
+		chg->thermal_mitigation[chg->system_temp_level]);
 	vote(chg->chg_disable_votable, THERMAL_DAEMON_VOTER, false, 0);
+/*
 	if (chg->system_temp_level == 0)
 		return vote(chg->fcc_votable, THERMAL_DAEMON_VOTER, false, 0);
 
 	vote(chg->fcc_votable, THERMAL_DAEMON_VOTER, true,
 			chg->thermal_mitigation[chg->system_temp_level]);
+*/
+	if (chg->system_temp_level == 0) {
+		if ((chg->real_charger_type == POWER_SUPPLY_TYPE_USB_HVDCP) ||
+			(chg->real_charger_type == POWER_SUPPLY_TYPE_USB_HVDCP_3)) {
+			vote(chg->usb_icl_votable, THERMAL_DAEMON_VOTER, true,
+				HVDCP_CURRENT_UA);
+		} else {
+			vote(chg->usb_icl_votable, THERMAL_DAEMON_VOTER, true,
+				chg->thermal_mitigation[chg->system_temp_level]);
+		}
+		return vote(chg->usb_icl_votable, THERMAL_DAEMON_VOTER, false, 0);
+	}
+
+	vote(chg->usb_icl_votable, THERMAL_DAEMON_VOTER, true,
+			chg->thermal_mitigation[chg->system_temp_level]);
+
 	return 0;
 }
 
