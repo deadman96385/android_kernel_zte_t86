@@ -18,21 +18,7 @@
 #include "fingerprint_fiorentina.dtsi"
 #include "touchscreen_fiorentina.dtsi"
 #include "zte-sm6150-camera-sensor.dtsi"
-
-&soc {
-	charger_policy_service {
-		compatible = "zte,charger-policy-service";
-		policy,enable = <1>;
-		policy,expired-mode-enable = <1>;
-		policy,retry-times = <10>;
-		policy,timeout-seconds = <64800>;/* 18 hours */
-		policy,max-capacity = <70>;
-		policy,min-capacity = <50>;
-		policy,bms-phy-name = "bms";
-		policy,battery-phy-name = "battery";
-		policy,cas-phy-name = "cas";
-	};
-};
+#include "../battery_protect_policy_080509200102.dtsi"
 
 &mtp_batterydata {
 	#include "zte_t86_weike_3900mAh.dtsi"
