@@ -39,6 +39,12 @@
 	qcom,shutdown_soc_threshold = <30>;
 	qcom,ignore-shutdown-soc-secs = <43200>;
 	qcom,shutdown-temp-diff = <150>;
+	qcom,cl-feedback-on;
+	qcom,cl-min-start-soc = <1>;
+	qcom,cl-max-start-soc = <30>;
+	qcom,cl-max-temp = <430>;
+	qcom,cl-max-increment = <30>;
+	qcom,cl-max-decrement = <10>;
 };
 
 &charge_arbitrate_service {
