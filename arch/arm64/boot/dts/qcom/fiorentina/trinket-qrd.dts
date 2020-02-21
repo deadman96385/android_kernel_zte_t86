@@ -41,6 +41,10 @@
 	qcom,shutdown-temp-diff = <150>;
 };
 
+&charge_arbitrate_service {
+	cas,full-raw-soc = <10000>;
+};
+
 &soc {
 	zte_misc {
 		compatible = "zte-misc";

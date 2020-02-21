@@ -1758,6 +1758,38 @@ static int smblib_temp_change_irq_disable_vote_callback(struct votable *votable,
 	return 0;
 }
 
+static int smblib_recharge_soc_vote_callback(struct votable *votable,
+			void *data, int recharge_soc, const char *client)
+{
+	struct smb_charger *chg = data;
+	int rc = 0;
+
+	if (recharge_soc <= 0 || recharge_soc >= 100) {
+		smblib_err(chg, "Couldn't configure recharge_soc to %d\n", recharge_soc);
+		return -EINVAL;
+	}
+
+	/* program the auto-recharge threshold */
+	rc = smblib_write(chg, CHARGE_RCHG_SOC_THRESHOLD_CFG_REG,
+			(recharge_soc * 255) / 100);
+	if (rc < 0) {
+		dev_err(chg->dev, "Couldn't configure CHG_RCHG_SOC_REG rc=%d\n",
+			rc);
+		return rc;
+	}
+	/* Program the sample count for SOC based recharge to 1 */
+	rc = smblib_masked_write(chg, CHGR_NO_SAMPLE_TERM_RCHG_CFG_REG,
+					NO_OF_SAMPLE_FOR_RCHG, 0);
+	if (rc < 0) {
+		dev_err(chg->dev, "Couldn't configure CHGR_NO_SAMPLE_FOR_TERM_RCHG_CFG rc=%d\n",
+			rc);
+		return rc;
+	}
+	chg->auto_recharge_soc = recharge_soc;
+
+	return 0;
+}
+
 /*******************
  * VCONN REGULATOR *
  * *****************/
@@ -7711,6 +7743,16 @@ static int smblib_create_votables(struct smb_charger *chg)
 	if (IS_ERR(chg->temp_change_irq_disable_votable)) {
 		rc = PTR_ERR(chg->temp_change_irq_disable_votable);
 		chg->temp_change_irq_disable_votable = NULL;
+		return rc;
+	}
+
+	chg->recharge_soc_votable = create_votable("RECHARGE_SOC",
+				VOTE_MIN,
+				smblib_recharge_soc_vote_callback, chg);
+	if (IS_ERR(chg->recharge_soc_votable)) {
+		rc = PTR_ERR(chg->recharge_soc_votable);
+		smblib_err(chg, "Couldn't create RECHARGE_SOC votable rc=%d\n", rc);
+		chg->recharge_soc_votable = NULL;
 		return rc;
 	}
 

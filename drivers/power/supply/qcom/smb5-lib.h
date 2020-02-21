@@ -86,6 +86,9 @@ enum print_reason {
 #define MAIN_FCC_VOTER			"MAIN_FCC_VOTER"
 #define DCIN_AICL_VOTER			"DCIN_AICL_VOTER"
 #define OVERHEAT_LIMIT_VOTER		"OVERHEAT_LIMIT_VOTER"
+#define CAS_SETTING_VOTER		"CAS_SETTING_VOTER"
+#define POLICY_SETTING_VOTER		"POLICY_SETTING_VOTER"
+#define BMS_SETTING_VOTER		"BMS_SETTING_VOTER"
 
 #define BOOST_BACK_STORM_COUNT	3
 #define WEAK_CHG_STORM_COUNT	8
@@ -409,6 +412,7 @@ struct smb_charger {
 	struct power_supply		*bms_psy;
 	struct power_supply		*usb_main_psy;
 	struct power_supply		*usb_port_psy;
+	struct power_supply		*interface_psy;
 	struct power_supply		*wls_psy;
 	struct power_supply		*cp_psy;
 	enum power_supply_type		real_charger_type;
@@ -447,6 +451,7 @@ struct smb_charger {
 	struct votable		*limited_irq_disable_votable;
 	struct votable		*hdc_irq_disable_votable;
 	struct votable		*temp_change_irq_disable_votable;
+	struct votable		*recharge_soc_votable;
 
 	/* work */
 	struct work_struct	bms_update_work;

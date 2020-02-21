@@ -65,7 +65,7 @@
 		};
 	};
 
-	charge_arbitrate_service {
+	charge_arbitrate_service: charge_arbitrate_service {
 		compatible = "zte,charge-arbitrate-service";
 		cas,enable = <1>;
 		cas,retry-times = <10>;
