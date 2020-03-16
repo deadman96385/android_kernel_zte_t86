@@ -382,7 +382,9 @@ static int dsi_panel_reset(struct dsi_panel *panel)
 			goto exit;
 		}
 	}
-
+#ifdef CONFIG_TOUCHSCREEN_VENDOR
+	tpd_reset_proc();
+#endif
 	for (i = 0; i < r_config->count; i++) {
 		gpio_set_value(r_config->reset_gpio,
 			       r_config->sequence[i].level);

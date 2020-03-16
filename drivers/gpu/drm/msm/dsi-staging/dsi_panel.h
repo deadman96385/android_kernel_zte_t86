@@ -63,7 +63,9 @@ struct zte_lcd_ctrl_data {
 #endif
 };
 #endif
-
+#ifdef CONFIG_TOUCHSCREEN_VENDOR
+extern int tpd_reset_proc(void);
+#endif
 /*zte add common function for lcd module end*/
 
 enum dsi_panel_rotation {
