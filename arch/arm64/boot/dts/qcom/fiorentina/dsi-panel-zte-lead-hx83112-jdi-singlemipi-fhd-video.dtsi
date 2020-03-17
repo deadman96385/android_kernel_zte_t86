@@ -13,7 +13,7 @@
 &mdss_mdp {
 	dsi_hx83112_lead_jdi_video: qcom,mdss_dsi_hx83112_lead_jdi_video {
 		qcom,mdss-dsi-panel-name =
-			"hx83112 video mode dsi lead panel";
+			"hx83112 video mode dsi lead himax panel";
 		qcom,mdss-dsi-panel-type = "dsi_video_mode";
 
 		qcom,mdss-dsi-virtual-channel-id = <0>;

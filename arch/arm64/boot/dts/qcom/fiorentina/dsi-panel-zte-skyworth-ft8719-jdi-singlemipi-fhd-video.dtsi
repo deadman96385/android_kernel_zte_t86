@@ -13,7 +13,7 @@
 &mdss_mdp {
 	dsi_ft8719_skyworth_jdi_video: qcom,mdss_dsi_ft8719_skyworth_jdi_video {
 		qcom,mdss-dsi-panel-name =
-			"ft8719 video mode dsi skyworth panel";
+			"ft8719 video mode dsi skyworth focal panel";
 		qcom,mdss-dsi-panel-type = "dsi_video_mode";
 
 		qcom,mdss-dsi-virtual-channel-id = <0>;
