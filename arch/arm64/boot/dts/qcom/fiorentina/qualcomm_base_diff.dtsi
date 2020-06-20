@@ -137,14 +137,15 @@
 
 &qupv3_se1_i2c {
 	status = "ok";
-	pn5xx@29 {
-		compatible = "nxp,pn5xx";
+	nq@29 {
+		compatible = "qcom,nq-nci";
 		reg = <0x29>;
-		nxp,pn5xx-irq  = <&tlmm 85 0x00>;
-		nxp,pn5xx-ven  = <&tlmm 83 0x00>;
-		nxp,pn5xx-fw-dwnld = <&tlmm 84 0x00>;
-		nxp,pn5xx-clkreq = <&tlmm 95 0x00>;
-		nxp,pn5xx-ese-pwr = <&tlmm 119 0x00>;
+		qcom,nq-irq  = <&tlmm 85 0x00>;
+		qcom,nq-ven  = <&tlmm 83 0x00>;
+		qcom,nq-firm = <&tlmm 84 0x00>;
+		qcom,nq-clkreq = <&tlmm 95 0x00>;
+		qcom,nq-esepwr = <&tlmm 119 0x00>;
+		qcom,clk-src = "BBCLK3";
 		interrupt-parent = <&tlmm>;
 		interrupts = <85 0>;
 		interrupt-names = "nfc_irq";
@@ -154,7 +155,7 @@
 		pinctrl-1 = <&nfc_int_suspend &nfc_enable_suspend
 				&nfc_clk_req_suspend>;
 		clocks = <&clock_rpmcc RPM_SMD_LN_BB_CLK3>;
-		clock-names = "bb_clk2";
+		clock-names = "ref_clk";
 	};
 };
 

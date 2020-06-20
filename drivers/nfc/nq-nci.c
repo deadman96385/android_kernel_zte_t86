@@ -48,7 +48,7 @@ static const struct of_device_id msm_match_table[] = {
 MODULE_DEVICE_TABLE(of, msm_match_table);
 
 #define DEV_COUNT	1
-#define DEVICE_NAME	"nq-nci"
+#define DEVICE_NAME	"pn553"
 #define CLASS_NAME	"nqx"
 #define MAX_BUFFER_SIZE			(320)
 #define WAKEUP_SRC_TIMEOUT		(2000)
@@ -888,7 +888,7 @@ reset_enable_gpio:
 			goto err_nfcc_hw_check;
 		}
 		/* hardware dependent delay */
-		usleep_range(10000, 10100);
+		usleep_range(30000, 30100);
 
 		ret = i2c_master_recv(client, nci_get_version_rsp,
 						NCI_GET_VERSION_RSP_LEN);
@@ -903,9 +903,9 @@ reset_enable_gpio:
 			nqx_dev->nqx_info.info.rom_version =
 				nci_get_version_rsp[4];
 			nqx_dev->nqx_info.info.fw_minor =
-				nci_get_version_rsp[6];
+				nci_get_version_rsp[10];
 			nqx_dev->nqx_info.info.fw_major =
-				nci_get_version_rsp[7];
+				nci_get_version_rsp[11];
 		}
 		goto err_nfcc_reset_failed;
 	}
@@ -958,9 +958,9 @@ reset_enable_gpio:
 		nci_reset_rsp[1], nci_reset_rsp[2]);
 
 err_nfcc_reset_failed:
-	dev_dbg(&nqx_dev->client->dev, "NQ NFCC chip_type = %x\n",
+	dev_err(&nqx_dev->client->dev, "NQ NFCC chip_type = %x\n",
 		nqx_dev->nqx_info.info.chip_type);
-	dev_dbg(&nqx_dev->client->dev, "NQ fw version = %x.%x.%x\n",
+	dev_err(&nqx_dev->client->dev, "NQ fw version = %x.%x.%x\n",
 		nqx_dev->nqx_info.info.rom_version,
 		nqx_dev->nqx_info.info.fw_major,
 		nqx_dev->nqx_info.info.fw_minor);
@@ -1461,11 +1461,17 @@ static int nqx_suspend(struct device *device)
 {
 	struct i2c_client *client = to_i2c_client(device);
 	struct nqx_dev *nqx_dev = i2c_get_clientdata(client);
+	int r = 0;
 
 	if (device_may_wakeup(&client->dev) && nqx_dev->irq_enabled) {
 		if (!enable_irq_wake(client->irq))
 			nqx_dev->irq_wake_up = true;
 	}
+	r = nqx_clock_deselect(nqx_dev);
+	if (r < 0)
+		dev_err(&nqx_dev->client->dev, "unable to disable clock\n");
+
+	nqx_dev->nfc_ven_enabled = false;
 	return 0;
 }
 
@@ -1473,11 +1479,17 @@ static int nqx_resume(struct device *device)
 {
 	struct i2c_client *client = to_i2c_client(device);
 	struct nqx_dev *nqx_dev = i2c_get_clientdata(client);
+	int r = 0;
 
 	if (device_may_wakeup(&client->dev) && nqx_dev->irq_wake_up) {
 		if (!disable_irq_wake(client->irq))
 			nqx_dev->irq_wake_up = false;
 	}
+	r = nqx_clock_select(nqx_dev);
+	if (r < 0)
+		dev_err(&nqx_dev->client->dev, "unable to enable clock\n");
+
+	nqx_dev->nfc_ven_enabled = true;
 	return 0;
 }
 
@@ -1496,7 +1508,7 @@ static struct i2c_driver nqx = {
 	.remove = nqx_remove,
 	.driver = {
 		.owner = THIS_MODULE,
-		.name = "nq-nci",
+		.name = "pn553",
 		.of_match_table = msm_match_table,
 		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 		.pm = &nfc_pm_ops,
